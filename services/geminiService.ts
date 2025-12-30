@@ -2,7 +2,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ProcessedArticle, ResearchGoal } from "../types.ts";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// API key is loaded from .env.local file (not committed to git)
+// This ensures the key is protected and not exposed in the code
+// The key is injected by Vite via vite.config.ts from the .env.local file
+const apiKey = (process.env.GEMINI_API_KEY as string) || '';
+
+if (!apiKey) {
+  console.warn('⚠️ GEMINI_API_KEY não está configurada. Por favor, crie um arquivo .env.local com sua chave da API.');
+}
+
+const ai = new GoogleGenAI({ apiKey });
 
 const ARTICLE_SCHEMA = {
   type: Type.OBJECT,
