@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { ResearchGoal, ProcessedArticle, ProcessingStatus } from './types';
-import { processManualArticle, searchAndProcessBatch } from './services/geminiService';
-import { ArticleCard } from './components/ArticleCard';
+import React, { useState, useEffect } from 'react';
+import { ResearchGoal, ProcessedArticle, ProcessingStatus } from './types.ts';
+import { processManualArticle, searchAndProcessBatch } from './services/geminiService.ts';
+import { ArticleCard } from './components/ArticleCard.tsx';
 
 const App: React.FC = () => {
   const [researchGoal, setResearchGoal] = useState<ResearchGoal>({
@@ -15,12 +15,16 @@ const App: React.FC = () => {
   const [status, setStatus] = useState<ProcessingStatus>(ProcessingStatus.IDLE);
   const [activeTab, setActiveTab] = useState<'manual' | 'search'>('manual');
 
-  // Load from local storage
+  // Load from local storage safely
   useEffect(() => {
-    const savedArticles = localStorage.getItem('research_articles');
-    const savedGoal = localStorage.getItem('research_goal');
-    if (savedArticles) setArticles(JSON.parse(savedArticles));
-    if (savedGoal) setResearchGoal(JSON.parse(savedGoal));
+    try {
+      const savedArticles = localStorage.getItem('research_articles');
+      const savedGoal = localStorage.getItem('research_goal');
+      if (savedArticles) setArticles(JSON.parse(savedArticles));
+      if (savedGoal) setResearchGoal(JSON.parse(savedGoal));
+    } catch (e) {
+      console.warn("Could not parse saved research data", e);
+    }
   }, []);
 
   // Save to local storage
@@ -143,7 +147,7 @@ const App: React.FC = () => {
                 <div>
                   <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Article Content</label>
                   <textarea 
-                    placeholder="Paste article text or URL content here..."
+                    placeholder="Paste article text or content here..."
                     className="w-full bg-slate-900/50 border border-white/10 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-64 text-sm font-mono text-slate-300"
                     value={manualContent}
                     onChange={(e) => setManualContent(e.target.value)}
@@ -256,7 +260,7 @@ const App: React.FC = () => {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
-          An error occurred. Please check your API key or connection.
+          An error occurred. Check connection or API key.
           <button onClick={() => setStatus(ProcessingStatus.IDLE)} className="ml-2 hover:opacity-70">✕</button>
         </div>
       )}

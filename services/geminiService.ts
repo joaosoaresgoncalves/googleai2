@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { ProcessedArticle, Section, ResearchGoal } from "../types";
+import { ProcessedArticle, ResearchGoal } from "../types.ts";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
@@ -25,6 +25,15 @@ const ARTICLE_SCHEMA = {
   required: ["title", "importanceScore", "importanceReasoning", "sections"]
 };
 
+// Simple ID fallback for non-secure contexts
+const generateUniqueId = () => {
+  try {
+    return crypto.randomUUID();
+  } catch (e) {
+    return Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+  }
+};
+
 export const processManualArticle = async (
   content: string, 
   researchGoal: ResearchGoal
@@ -43,11 +52,12 @@ export const processManualArticle = async (
     }
   });
 
-  const data = JSON.parse(response.text);
+  const text = response.text || "{}";
+  const data = JSON.parse(text);
   
   return {
     ...data,
-    id: crypto.randomUUID(),
+    id: generateUniqueId(),
     researchGoal: researchGoal.topic,
     processedAt: Date.now(),
     sourceType: 'manual'
@@ -58,7 +68,6 @@ export const searchAndProcessBatch = async (
   query: string,
   researchGoal: ResearchGoal
 ): Promise<ProcessedArticle[]> => {
-  // First, find relevant content using Search Grounding
   const searchResponse = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Find 5 distinct and highly relevant articles about "${query}" that would specifically help with the following research:
@@ -77,11 +86,12 @@ export const searchAndProcessBatch = async (
     }
   });
 
-  const results = JSON.parse(searchResponse.text);
+  const text = searchResponse.text || "[]";
+  const results = JSON.parse(text);
   
   return results.map((item: any) => ({
     ...item,
-    id: crypto.randomUUID(),
+    id: generateUniqueId(),
     researchGoal: researchGoal.topic,
     processedAt: Date.now(),
     sourceType: 'search'
